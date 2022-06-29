@@ -6,20 +6,30 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <fstream>
 
 using namespace std;
 
 string ParseEvent(istream& is) {
-  // Реализуйте эту функцию
+    string event;
+    getline(is, event);
+
+    auto first = event.find_first_not_of(" ");
+
+    if (first == string::npos)
+        return string();
+
+    event.erase(0, first);
+    return event;
 }
 
 void TestAll();
 
 int main() {
-    TestAll();
+    //TestAll();
 
     Database db;
-
+    //ifstream fin ("test3.txt");
     for (string line; getline(cin, line); ) {
         istringstream is(line);
 

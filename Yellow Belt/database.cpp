@@ -1,39 +1,56 @@
 #include "database.h"
-#include "date.h"
+
+#include <algorithm>
+
+bool operator<(const Entry& a, const Entry& b) {
+    return a.date() < b.date();
+}
+
+bool operator==(const Entry& a, const Entry& b) {
+    return a.date() == b.date() && a.event() == b.event();
+}
+
+ostream& operator<<(ostream& os, const Entry& entry) {
+    os << entry.date() << " " << entry.event();
+    return os;
+}
+
+void Database::Vector_Set::Print(ostream& os, const Date& date) const {
+    for (const auto& event : events_) {
+        os << date << " " << event << endl;
+    }
+}
 
 void Database::Add(const Date& date, const string& event) {
-    DB[date].insert(event);
-}
-
-bool Database::DeleteEvent(const Date& date, const string& event) {
-    if (DB[date].find(event) == DB[date].end()) {
-        return false;
+    auto it = db_.find(date);
+    if (it != db_.end()) {
+        auto& events = it->second;
+        if (events.Contains(event)) {
+            return;
+        }
+        events.Add(event);
     }
     else {
-        DB[date].erase(event);
-        return true;
+        db_[date].Add(event);
     }
 }
 
-inline int Database::DeleteDate(const Date& date) {
-    int N;
-    N = DB[date].size();
-    DB.erase(date);
-    return N;
-}
-
-inline void Database::Find(const Date& date) const {
-    if (DB.find(date) != DB.end()) {
-        for (const auto& i : DB.at(date)) {
-            cout << i << endl;
-        }
+void Database::Print(ostream& os) const {
+    for (const auto& [date, events] : db_) {
+        events.Print(os, date);
     }
 }
 
-inline void Database::Print() const {
-    for (const auto& item : DB) {
-        for (const auto& i : DB.at(item.first)) {
-            cout << item.first << " " << i << endl;
-        }
+Entry Database::Last(const Date& date) const {
+    if (db_.empty()) {
+        throw invalid_argument("Empty database");
     }
+    auto it = db_.lower_bound(date);
+    if (it == db_.cbegin() && date < it->first) {
+        throw invalid_argument("No entries for requested date");
+    }
+    if (it == db_.cend() || it->first != date) {
+        it = prev(it);
+    }
+    return Entry(it->first, it->second.Last());
 }
